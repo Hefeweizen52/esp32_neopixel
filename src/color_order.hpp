@@ -12,6 +12,18 @@ struct GRB
     }
 };
 
+struct BRG
+{
+    static constexpr int num_channels = 3;
+    static inline void encode(uint8_t r, uint8_t g, uint8_t b, uint8_t w, uint8_t *out)
+    {
+        out[0] = b;
+        out[1] = r;
+        out[2] = g;
+    }
+};
+
+
 struct WRGB
 {
     static constexpr int num_channels = 4;
