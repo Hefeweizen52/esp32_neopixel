@@ -2,17 +2,21 @@
 #define ESP32_RMT_HPP
 
 #include <Arduino.h>
-#include "driver/rmt.h"
 #include <vector>
-#include "color_order.hpp"
+#include "driver/rmt.h"
 #include "led_types.hpp"
+#include "color_order.hpp"
+#include "comfort_functions.hpp"
+#include "gamma8.h"
 
 #define CLK_DIV 2
 
 template <typename led_type, typename color_order>
-class esp32_rmt
+class esp32_rmt : public comfort_functions
 {
 public:
+    using comfort_functions::set_pixel;
+
     esp32_rmt() = delete;
 
     esp32_rmt(gpio_num_t pin, rmt_channel_t channel, size_t num_pixels) : _pin(pin), _channel(channel), _num_pixels(num_pixels)
@@ -65,18 +69,32 @@ public:
 
     void set_pixel(size_t idx, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0)
     {
-        color_order::encode(r, g, b, w, &_pixel_buf[idx * color_order::num_channels]);
+        if (idx < _num_pixels)
+            color_order::encode(r, g, b, w, &_pixel_buf[idx * color_order::num_channels]);
     }
 
     void show()
     {
         size_t buf_idx = 0; // Index im rmt_data_buf
 
+        uint8_t global_brightness = comfort_functions::_brightness;
+
         for (uint8_t byte : _pixel_buf)
         {
+            uint16_t scaled_byte = byte;
+
+#ifdef USE_GAMMA_CORRECTION
+            // Nutze den Wert aus der Gamma-Tabelle für die Skalierung
+            // pgm_read_byte ist wichtig, da die Tabelle im Flash (PROGMEM) liegt
+            scaled_byte = (scaled_byte * pgm_read_byte(&gamma8[global_brightness])) >> 8;
+#else
+            // Lineare Skalierung ohne Gamma
+            scaled_byte = (scaled_byte * global_brightness) >> 8;
+#endif
+
             for (int bit = 7; bit >= 0; --bit)
             {
-                bool b = byte & (1 << bit);
+                bool b = scaled_byte & (1 << bit);
 
                 rmt_item32_t &item = _rmt_buf[buf_idx++];
 
