@@ -1,0 +1,19 @@
+{
+  "name": "esp32_neopixel",
+  "version": "1.0.0",
+  "description": "Control you addressable LEDs using ESP32 Peripherals",
+  "keywords": "neopixel, ws2812, rmt, esp32",
+  "authors": [
+    {
+      "name": "Hefeweizen52"
+    }
+  ],
+  "build": {
+    "srcFilter": [
+      "+<*>"
+    ],
+    "includeDir": "src"
+  },
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}
